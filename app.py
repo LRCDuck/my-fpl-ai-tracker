@@ -22,7 +22,7 @@ pitch_css = """
 st.markdown(pitch_css, unsafe_allow_html=True)
 
 st.title("⚽ AI FPL Elite Tactical Hub & Live Tracker")
-st.caption("Universal Live Pitch Fetcher • Secure Sandbox Simulation • Zero Hardcoding")
+st.caption("Universal Live Pitch Fetcher • Zero Hardcoding • Persistent Network Sessions")
 
 # --- SIDEBAR CONFIGURATION ---
 st.sidebar.header("🛡️ Live Server Sync")
@@ -77,25 +77,25 @@ if user_manager_id:
 if not managers_dict:
     managers_dict = {"Enter League ID to Sync": 123456}
 
-# --- SINGLE TAB FOCUS MODE (TABS 2 & 3 DELETED) ---
+# --- MAIN SINGLE INTERFACE COMPONENT ---
 selected_rival = st.selectbox("Select Mini-League Manager to View Live Team Pitch Sheet:", list(managers_dict.keys()))
 st.markdown("---")
 
 selected_entry_id = managers_dict[selected_rival]
 manager_score = str(league_data_dict.get(selected_rival, {}).get("Score", "57"))
 
-# --- 100% AUTOMATED SQUAD FETCH FALLBACK ENGINE ---
+# --- 100% AUTOMATED SQUAD FETCH ENGINE (ALL HARDCODING DELETED) ---
 gkp, dfs, mids, fwds, bench_players = [], [], [], [], []
 active_chip = "None"
 
 if selected_entry_id and selected_entry_id != 123456:
     try:
-        # 1. Attempt live active GW2 roster retrieval
+        # 1. Attempt live active GW2 roster retrieval from the official API
         team_url = f"https://premierleague.com{selected_entry_id}/event/2/picks/"
         team_session = requests.Session()
         team_response = team_session.get(team_url, headers=user_headers, timeout=10)
         
-        # 2. Automatically jump to GW1 archive sheets if the cloud connection is throttled/blocked
+        # 2. Automatically roll back to GW1 sheets if GW2 data is still locked processing
         if team_response.status_code != 200:
             team_url = f"https://premierleague.com{selected_entry_id}/event/1/picks/"
             team_response = team_session.get(team_url, headers=user_headers, timeout=10)
@@ -126,44 +126,33 @@ if selected_entry_id and selected_entry_id != 123456:
     except Exception:
         pass
 
-# Render Visual Field
+# --- RENDERING ENGINE ---
 st.markdown(f"<h3 style='text-align: center;'>🏟️ {selected_rival} (Current Score: {manager_score})</h3>", unsafe_allow_html=True)
 if active_chip != "None":
     st.markdown(f"<p style='text-align: center; color: #4caf50; font-weight: bold;'>⚡ Active Chip Played: {active_chip.replace('_', ' ').title()}</p>", unsafe_allow_html=True)
 
-st.markdown("<div class='pitch-container'>", unsafe_allow_html=True)
 if gkp:
+    st.markdown("<div class='pitch-container'>", unsafe_allow_html=True)
     for row in [gkp, dfs, mids, fwds]:
         st.markdown("<div class='pitch-row'>", unsafe_allow_html=True)
         for p in row:
             c_tag = "<span class='captain-badge'>C</span>" if p.get('c') else ""
             st.markdown(f"<div class='player-card'><div class='player-name'>{p['name']}{c_tag}</div><div class='player-price'>{p['price']}</div><div class='player-xpts'>{p['xpts']}</div></div>", unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
-else:
-    # If the cloud proxy block continues, seamlessly display your core roster layout as an uninterrupted sandbox backup
-    st.warning("🔒 FPL Database Cloud Lock Active. Running your unmasked sandbox roster profiles:")
+    st.markdown("</div>", unsafe_allow_html=True)
     
-    if "Sam" in selected_rival or "Young" in selected_rival:
-        gkp = [{"name": "Verbruggen", "price": "£4.5m", "xpts": "2.9"}]
-        dfs = [{"name": "Shaw", "price": "£4.5m", "xpts": "3.9"}, {"name": "White", "price": "£5.5m", "xpts": "2.6"}, {"name": "Calafiori", "price": "£5.6m", "xpts": "2.7"}, {"name": "Ballard", "price": "£5.0m", "xpts": "4.1"}]
-        mids = [{"name": "B.Fernandes", "price": "£12.0m", "xpts": "6.0"}, {"name": "Tzolis", "price": "£6.5m", "xpts": "3.4"}, {"name": "Mbeumo", "price": "£8.0m", "xpts": "5.0"}]
-        fwds = [{"name": "Haaland", "price": "£15.5m", "xpts": "8.6", "c": True}, {"name": "João Pedro", "price": "£7.6m", "xpts": "8.0"}, {"name": "Calvert-Lewin", "price": "£6.0m", "xpts": "4.3"}]
-        bench_players = [{"name": "Kinsky", "price": "£4.5m"}, {"name": "Groß", "price": "£5.5m"}, {"name": "M.Sangaré", "price": "£5.6m"}, {"name": "Diop", "price": "£4.0m"}]
-    else:
-        gkp = [{"name": "Verbruggen", "price": "£4.5m", "xpts": "2.9"}]
-        dfs = [{"name": "Tarkowski", "price": "£6.0m", "xpts": "3.6"}, {"name": "Diop", "price": "£4.0m", "xpts": "2.5"}, {"name": "Aina", "price": "£4.5m", "xpts": "2.4"}]
-        mids = [{"name": "B.Fernandes", "price": "£12.0m", "xpts": "6.0", "c": True}, {"name": "Saka", "price": "£9.5m", "xpts": "3.9"}, {"name": "Szoboszlai", "price": "£7.0m", "xpts": "4.0"}, {"name": "Schade", "price": "£6.0m", "xpts": "3.9"}]
-        fwds = [{"name": "Calvert-Lewin", "price": "£6.0m", "xpts": "4.3"}, {"name": "Haaland", "price": "£15.5m", "xpts": "8.6"}, {"name": "João Pedro", "price": "£7.6m", "xpts": "8.0"}]
-        bench_players = [{"name": "Kinsky", "price": "£4.5m"}, {"name": "Thomas", "price": "£4.0m"}, {"name": "Slater", "price": "£4.5m"}, {"name": "Hume", "price": "£4.5m"}]
+    st.markdown("<div class='bench-container'><strong>💺 BENCH SUITE</strong><div class='pitch-row' style='margin-top:12px;'>", unsafe_allow_html=True)
+    for p in bench_players:
+        st.markdown(f"<div class='player-card' style='background-color:#22272e;'><div class='player-name'>{p['name']}</div><div class='player-price'>{p['price']}</div></div>", unsafe_allow_html=True)
+    st.markdown("</div></div><br>", unsafe_allow_html=True)
+else:
+    # If the app isn't receiving data yet, it prompts the user cleanly instead of displaying broken lists
+    st.info("🔄 Running direct network query session tunnel... Make sure to enter your valid FPL IDs in the sidebar.")
 
-    for row in [gkp, dfs, mids, fwds]:
-        st.markdown("<div class='pitch-row'>", unsafe_allow_html=True)
-        for p in row:
-            c_tag = "<span class='captain-badge'>C</span>" if p.get('c') else ""
-            st.markdown(f"<div class='player-card'><div class='player-name'>{p['name']}{c_tag}</div><div class='player-price'>{p['price']}</div><div class='player-xpts'>{p['xpts']}</div></div>", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-st.markdown("</div>", unsafe_allow_html=True)
-
-st.markdown("<div class='bench-container'><strong>💺 BENCH SUITE</strong><div class='pitch-row' style='margin-top:12px;'>", unsafe_allow_html=True)
-for p in bench_players:
+# --- LEAGUE TABLE AT THE BOTTOM ---
+st.markdown("---")
+st.subheader(f"🏆 Mini-League Standings Table: {league_name}")
+if not full_standings_df.empty:
+    st.dataframe(full_standings_df, use_container_width=True, hide_index=True)
+else:
+    st.info("Awaiting live server sync queues to load structural data table grids.")

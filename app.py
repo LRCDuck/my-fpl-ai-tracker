@@ -54,18 +54,21 @@ player_registry = get_fpl_player_registry()
 
 if league_input:
     try:
-        fpl_url = f"https://fantasy.premierleague.com/api/leagues-classic/{league_input}/standings/"
+        fpl_url = f"https://premierleague.com{league_input}/standings/"
         session = requests.Session()
         response = session.get(fpl_url, headers=user_headers, timeout=15)
         
         if response.status_code == 200:
             data = response.json()
             league_name = data['league']['name']
+            league_rows = []
             for m in data['standings']['results']:
                 display_name = f"{m['player_name']} ({m['entry_name']})"
                 managers_dict[display_name] = m['entry']
                 league_data_dict[display_name] = {"Score": m['total'], "Rank": m['rank']}
-                league_rows = [{"Rank": item['rank'], "Manager Name": item['player_name'], "Team Name": item['entry_name'], "Total Points": item['total']} for item in data['standings']['results']]
+                league_rows.append({
+                    "Rank": m['rank'], "Manager Name": m['player_name'], "Team Name": m['entry_name'], "Total Points": m['total']
+                })
             full_standings_df = pd.DataFrame(league_rows)
     except Exception:
         pass
@@ -78,7 +81,7 @@ if not managers_dict:
 # --- MULTI-TAB CONTROLLER HUB ---
 tab1, tab2, tab3 = st.tabs(["📋 Scout Rival Team Pitch", "🏆 Leaderboard Matrix", "📈 Market Price Radar"])
 
-# TAB 1: Team Pitch Sheet Viewer
+# TAB 1: Team Pitch Sheet Viewer & Bottom Leaderboard
 with tab1:
     selected_rival = st.selectbox("Select Mini-League Manager to View Live Team Pitch Sheet:", list(managers_dict.keys()))
     st.markdown("---")
@@ -101,7 +104,7 @@ with tab1:
         # Default layout sets up your premium player core cleanly
         gkp = [{"name": "Verbruggen", "price": "£4.5m", "xpts": "2.9"}]
         dfs = [{"name": "Tarkowski", "price": "£6.0m", "xpts": "3.6"}, {"name": "Diop", "price": "£4.0m", "xpts": "2.5"}, {"name": "Aina", "price": "£4.5m", "xpts": "2.4"}]
-        mids = [{"name": "B.Fernandes", "price": "£12.0m", "xpts": "6.0", "c": True}, {"name": "Saka", "price": "£9.5m", "xpts": "3.9"}, {"name": "Szoboszlai", "price": "£7.0m", "xpts": "4.0"}, {"name": "Schade", "price": "£6.0m", "xpts": "3.9"}]
+        mids = [{"name": "B.Fernandes", "price": "£12.0m", "xpts": "6.0", "c": True}, {"name": "Saka", "price": "£9.5m", "xpts": "3.9"}, {"name": "Szoboszlai", "price": "£7.0m", "xpts": "4.0"}, {"name": "Schade", "price": "£6.0m", "xpts": "3.9"}],
         fwds = [{"name": "Calvert-Lewin", "price": "£6.0m", "xpts": "4.3"}, {"name": "Haaland", "price": "£15.5m", "xpts": "8.6"}, {"name": "João Pedro", "price": "£7.6m", "xpts": "8.0"}]
         bench_players = [{"name": "Kinsky", "price": "£4.5m"}, {"name": "Thomas", "price": "£4.0m"}, {"name": "Slater", "price": "£4.5m"}, {"name": "Hume", "price": "£4.5m"}]
 
@@ -119,6 +122,14 @@ with tab1:
     for p in bench_players:
         st.markdown(f"<div class='player-card' style='background-color:#22272e;'><div class='player-name'>{p['name']}</div><div class='player-price'>{p['price']}</div></div>", unsafe_allow_html=True)
     st.markdown("</div></div><br>", unsafe_allow_html=True)
+
+    # --- ADDED LEAGUE TABLE AT THE BOTTOM OF TAB 1 ---
+    st.markdown("---")
+    st.subheader(f"🏆 Mini-League Standings Table: {league_name}")
+    if not full_standings_df.empty:
+        st.dataframe(full_standings_df, use_container_width=True, hide_index=True)
+    else:
+        st.info("Awaiting live server sync queues to load structural data table grids.")
 
 # TAB 2: Table Matrices
 with tab2:

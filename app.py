@@ -101,10 +101,10 @@ with tab1:
         fwds = [{"name": "Haaland", "price": "£15.5m", "xpts": "8.6", "c": True}, {"name": "João Pedro", "price": "£7.6m", "xpts": "8.0"}, {"name": "Calvert-Lewin", "price": "£6.0m", "xpts": "4.3"}]
         bench_players = [{"name": "Kinsky", "price": "£4.5m"}, {"name": "Groß", "price": "£5.5m"}, {"name": "M.Sangaré", "price": "£5.6m"}, {"name": "Diop", "price": "£4.0m"}]
     else:
-        # Default layout sets up your premium player core cleanly
+        # Default layout sets up your premium player core cleanly (FIXED COMMA BUG)
         gkp = [{"name": "Verbruggen", "price": "£4.5m", "xpts": "2.9"}]
         dfs = [{"name": "Tarkowski", "price": "£6.0m", "xpts": "3.6"}, {"name": "Diop", "price": "£4.0m", "xpts": "2.5"}, {"name": "Aina", "price": "£4.5m", "xpts": "2.4"}]
-        mids = [{"name": "B.Fernandes", "price": "£12.0m", "xpts": "6.0", "c": True}, {"name": "Saka", "price": "£9.5m", "xpts": "3.9"}, {"name": "Szoboszlai", "price": "£7.0m", "xpts": "4.0"}, {"name": "Schade", "price": "£6.0m", "xpts": "3.9"}],
+        mids = [{"name": "B.Fernandes", "price": "£12.0m", "xpts": "6.0", "c": True}, {"name": "Saka", "price": "£9.5m", "xpts": "3.9"}, {"name": "Szoboszlai", "price": "£7.0m", "xpts": "4.0"}, {"name": "Schade", "price": "£6.0m", "xpts": "3.9"}]
         fwds = [{"name": "Calvert-Lewin", "price": "£6.0m", "xpts": "4.3"}, {"name": "Haaland", "price": "£15.5m", "xpts": "8.6"}, {"name": "João Pedro", "price": "£7.6m", "xpts": "8.0"}]
         bench_players = [{"name": "Kinsky", "price": "£4.5m"}, {"name": "Thomas", "price": "£4.0m"}, {"name": "Slater", "price": "£4.5m"}, {"name": "Hume", "price": "£4.5m"}]
 
@@ -123,7 +123,7 @@ with tab1:
         st.markdown(f"<div class='player-card' style='background-color:#22272e;'><div class='player-name'>{p['name']}</div><div class='player-price'>{p['price']}</div></div>", unsafe_allow_html=True)
     st.markdown("</div></div><br>", unsafe_allow_html=True)
 
-    # --- ADDED LEAGUE TABLE AT THE BOTTOM OF TAB 1 ---
+    # --- LEAGUE TABLE AT THE BOTTOM OF TAB 1 ---
     st.markdown("---")
     st.subheader(f"🏆 Mini-League Standings Table: {league_name}")
     if not full_standings_df.empty:

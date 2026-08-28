@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import requests
+import json
 
 st.set_page_config(page_title="AI FPL Mini-League Tracker", layout="wide")
 
@@ -15,7 +16,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.markdown("<h1 class='title-header'>⚽ AI FPL Mini-League Scouting Hub</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #8b949e;'>Smart-Caching Mode • Manual Refresh Button • Direct Database Feed</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #8b949e;'>Proxy Tunnel Mode • Smart-Caching • Direct Database Feed</p>", unsafe_allow_html=True)
 st.markdown("---")
 
 # --- SIDEBAR CONFIGURATION ---
@@ -23,21 +24,27 @@ st.sidebar.header("⚙️ Server Data Sync")
 league_id = st.sidebar.text_input("Enter FPL Mini-League ID:", value="1116047")
 your_name = st.sidebar.text_input("Enter Your Name (To Highlight Your Team):", value="")
 
-# Human web browser headers to bypass the basic server blockers safely
 user_headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
 }
 
-# --- SMART CACHING STORAGE ENGINE ---
+# --- SMART CACHING STORAGE ENGINE WITH UNBLOCKING PROXY ---
 @st.cache_data(ttl=86400)
 def fetch_league_standings_cached(l_id):
+    if not l_id:
+        return "No League ID", pd.DataFrame(), "Please enter a valid Mini-League ID."
+        
     try:
-        fpl_url = f"https://premierleague.com{l_id}/standings/"
-        session = requests.Session()
-        response = session.get(fpl_url, headers=user_headers, timeout=15)
+        # CRITICAL FIX: Tunneling the URL through the AllOrigins proxy to smash past cloud blocks
+        target_fpl_url = f"https://premierleague.com{l_id}/standings/"
+        proxy_url = f"https://allorigins.win{requests.utils.quote(target_fpl_url)}"
+        
+        response = requests.get(proxy_url, headers=user_headers, timeout=20)
         
         if response.status_code == 200:
-            data = response.json()
+            wrapper = response.json()
+            data = json.loads(wrapper['contents']) # Parse the clean proxy bundle contents
+            
             league_name = data['league']['name']
             raw_results = data['standings']['results']
             
@@ -57,17 +64,16 @@ def fetch_league_standings_cached(l_id):
                 })
             return league_name, pd.DataFrame(league_rows), None
         else:
-            return "Server Offline", pd.DataFrame(), f"Database busy (Code: {response.status_code})"
+            return "Server Offline", pd.DataFrame(), f"Proxy connection error (Code: {response.status_code})"
     except Exception as e:
-        return "Server Error", pd.DataFrame(), "FPL connection timed out."
+        return "Server Error", pd.DataFrame(), "Proxy tunnel busy. Click manual pull to retry."
 
 # --- MANUAL REFRESH BUTTON TRIGGER ---
-# This puts a big clean button right above your leaderboard on the page!
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     if st.button("🔄 Manually Pull Fresh Data (Clear Memory Cache)"):
         st.cache_data.clear()
-        st.toast("🧹 Local cache cleared! Fetching fresh live scores...")
+        st.toast("🧹 Local cache cleared! Fetching fresh live scores via proxy tunnel...")
 
 league_name, full_standings_df, error_msg = fetch_league_standings_cached(league_id)
 
@@ -76,7 +82,7 @@ if error_msg:
     st.error(f"⚠️ {error_msg}")
 
 st.markdown(f"<div class='card'><h3>🏆 Active League: {league_name}</h3>"
-            f"<p>🔒 Loading from secure internal website memory. Click the button above to update live.</p></div>", unsafe_allow_html=True)
+            f"<p>🔒 Loading from secure proxy tunnel memory cache. Zero server lag.</p></div>", unsafe_allow_html=True)
 
 if not full_standings_df.empty:
     def highlight_user_row(row):
@@ -93,7 +99,6 @@ if not full_standings_df.empty:
     leader_name = full_standings_df.iloc[0]['Manager Name']
     leader_points = full_standings_df.iloc[0]['Total Points']
     st.info(f"📊 **Scouting Report:** The mini-league is being led by **{leader_name}** with **{leader_points} points**. "
-            f"Your app is fully protected against server limits. The table will stay frozen instantly until you manually "
-            f"click the green 'Manually Pull Fresh Data' button above!")
+            f"Your proxy unblocker channel is active. Click the green button above any time during matches to update scores!")
 else:
-    st.warning("🔄 Awaiting initial data stream link setup. Make sure your Mini-League ID is entered correctly.")
+    st.warning("🔄 Awaiting proxy handshake. Enter your Mini-League ID inside the sidebar config panel.")

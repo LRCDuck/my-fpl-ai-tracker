@@ -8,19 +8,19 @@ st.set_page_config(page_title="AI FPL Elite Tactical Hub", layout="wide")
 st.markdown("""
     <style>
     .main { background-color: #0d1117; color: #c9d1d9; }
-    .pitch-container { background-color: #0b2214; border: 2px solid #1f5f38; border-radius: 12px; padding: 15px; margin-bottom: 20px; }
-    .bench-container { background-color: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 15px; margin-top: 10px; }
-    .pitch-row { display: flex; justify-content: center; gap: 15px; margin-bottom: 15px; }
-    .player-card { background-color: #1c2128; border: 1px solid #444c56; border-radius: 6px; padding: 8px; width: 110px; text-align: center; font-size: 12px; box-shadow: 2px 2px 5px rgba(0,0,0,0.3); }
+    .pitch-container { background-color: #0b2214; border: 2px solid #1f5f38; border-radius: 12px; padding: 25px; margin-bottom: 20px; max-width: 700px; margin-left: auto; margin-right: auto; }
+    .bench-container { background-color: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 20px; margin-top: 15px; max-width: 700px; margin-left: auto; margin-right: auto; }
+    .pitch-row { display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; }
+    .player-card { background-color: #1c2128; border: 1px solid #444c56; border-radius: 8px; padding: 12px; width: 125px; text-align: center; font-size: 13px; box-shadow: 3px 3px 8px rgba(0,0,0,0.4); }
     .player-name { font-weight: bold; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .player-price { color: #58a6ff; font-weight: bold; font-size: 11px; margin-top: 2px; }
-    .player-xpts { color: #2ea043; font-size: 11px; }
-    .captain-badge { background-color: #ffeb3b; color: #000000; font-weight: bold; border-radius: 3px; padding: 1px 4px; font-size: 9px; margin-left: 3px; }
+    .player-price { color: #58a6ff; font-weight: bold; font-size: 11px; margin-top: 3px; }
+    .player-xpts { color: #2ea043; font-size: 11px; margin-top: 2px; }
+    .captain-badge { background-color: #ffeb3b; color: #000000; font-weight: bold; border-radius: 3px; padding: 1px 5px; font-size: 10px; margin-left: 4px; }
     </style>
 """, unsafe_allow_html=True)
 
 st.title("⚽ AI FPL Elite Tactical Hub & Live Tracker")
-st.caption("Automated Roster Audits • Dual Team Pitch Comparisons • Strategic Chip Tracking Panels")
+st.caption("Automated Roster Audits • Single Team Pitch View • Strategic Chip Tracking Panels")
 
 # Sidebar - Live League Sync Layout
 st.sidebar.header("🛡️ Live League Sync")
@@ -55,9 +55,9 @@ if league_input:
 if not managers_list:
     managers_list = ["You (Your Team Layout)", "Sam Young (Heroes and Villans)", "Ben Taylor (Final 11)"]
 
-# --- HELPER DESIGN FUNCTION TO RENDER AN ANALYZER PITCH ---
+# --- DESIGN FUNCTION TO RENDER A SINGLE COMPREHENSIVE PITCH ---
 def render_squad_pitch(title, gkp, dfs, mids, fwds, bench_players):
-    st.markdown(f"### {title}")
+    st.markdown(f"<h3 style='text-align: center;'>🏟️ {title}</h3>", unsafe_allow_html=True)
     st.markdown("<div class='pitch-container'>", unsafe_allow_html=True)
     
     # 1. Goalkeeper Line
@@ -88,41 +88,47 @@ def render_squad_pitch(title, gkp, dfs, mids, fwds, bench_players):
     st.markdown("</div>", unsafe_allow_html=True) # End pitch
     
     # 5. Bench Row Display
-    st.markdown("<div class='bench-container'><strong>💺 BENCH</strong><div class='pitch-row' style='margin-top:10px;'>", unsafe_allow_html=True)
+    st.markdown("<div class='bench-container'><strong>💺 BENCH SUITE</strong><div class='pitch-row' style='margin-top:12px;'>", unsafe_allow_html=True)
     for p in bench_players:
         st.markdown(f"<div class='player-card' style='background-color:#22272e;'><div class='player-name'>{p['name']}</div><div class='player-price'>{p['price']}</div></div>", unsafe_allow_html=True)
     st.markdown("</div></div><br>", unsafe_allow_html=True)
 
 # Main Navigation Tabs
-tab1, tab2, tab3 = st.tabs(["⚔️ Dual Rival Pitch Comparison", "📅 Leaderboard Matrix", "📈 Price Radar"])
+tab1, tab2, tab3 = st.tabs(["📋 Scout Rival Team Pitch", "📅 Leaderboard Matrix", "📈 Price Radar"])
 
 with tab1:
-    st.subheader(f"🏟️ Mini-League Head-to-Head Arena")
-    selected_rival = st.selectbox("Select Mini-League Rival to Compare Against Your Squad:", managers_list)
+    selected_rival = st.selectbox("Select Mini-League Manager to View Team Pitch Sheet:", managers_list)
     
-    # Left and Right layout columns matching image layout comparison structure
-    left_pitch, right_pitch = st.columns(2)
+    st.markdown("---")
     
-    with left_pitch:
-        # Rendering Your Actual Team configuration
+    # Logic to switch data inputs dynamically based on dropdown selection
+    if "Sam" in selected_rival:
         render_squad_pitch(
-            "🟢 Your Active Squad Setup",
-            [{"name": "Verbruggen", "price": "£4.5m", "xpts": "2.9"}],
-            [{"name": "Tarkowski", "price": "£6.0m", "xpts": "3.6"}, {"name": "Diop", "price": "£4.0m", "xpts": "2.5"}, {"name": "Aina", "price": "£4.5m", "xpts": "2.4"}],
-            [{"name": "B.Fernandes", "price": "£12.0m", "xpts": "6.0", "c": True}, {"name": "Saka", "price": "£9.5m", "xpts": "3.9"}, {"name": "Szoboszlai", "price": "£7.0m", "xpts": "4.0"}, {"name": "Schade", "price": "£6.0m", "xpts": "3.9"}],
-            [{"name": "Calvert-Lewin", "price": "£6.0m", "xpts": "4.3"}, {"name": "Haaland", "price": "£15.5m", "xpts": "8.6"}, {"name": "João Pedro", "price": "£7.6m", "xpts": "8.0"}],
-            [{"name": "Kinsky", "price": "£4.5m"}, {"name": "Thomas", "price": "£4.0m"}, {"name": "Slater", "price": "£4.5m"}, {"name": "Hume", "price": "£4.5m"}]
-        )
-        
-    with right_pitch:
-        # Rendering Selected Rival Team configuration
-        render_squad_pitch(
-            f"🔴 Rival: {selected_rival}",
+            f"Active Team: {selected_rival}",
             [{"name": "Verbruggen", "price": "£4.5m", "xpts": "2.9"}],
             [{"name": "Shaw", "price": "£4.5m", "xpts": "3.9"}, {"name": "White", "price": "£5.5m", "xpts": "2.6"}, {"name": "Calafiori", "price": "£5.6m", "xpts": "2.7"}, {"name": "Ballard", "price": "£5.0m", "xpts": "4.1"}],
             [{"name": "B.Fernandes", "price": "£12.0m", "xpts": "6.0"}, {"name": "Tzolis", "price": "£6.5m", "xpts": "3.4"}, {"name": "Mbeumo", "price": "£8.0m", "xpts": "5.0"}],
             [{"name": "Haaland", "price": "£15.5m", "xpts": "8.6", "c": True}, {"name": "João Pedro", "price": "£7.6m", "xpts": "8.0"}, {"name": "Calvert-Lewin", "price": "£6.0m", "xpts": "4.3"}],
             [{"name": "Kinsky", "price": "£4.5m"}, {"name": "Groß", "price": "£5.5m"}, {"name": "M.Sangaré", "price": "£5.6m"}, {"name": "Diop", "price": "£4.0m"}]
+        )
+    elif "Ben" in selected_rival:
+        render_squad_pitch(
+            f"Active Team: {selected_rival}",
+            [{"name": "Verbruggen", "price": "£4.5m", "xpts": "2.9"}],
+            [{"name": "Shaw", "price": "£4.5m", "xpts": "3.9"}, {"name": "White", "price": "£5.5m", "xpts": "2.6"}, {"name": "Calafiori", "price": "£5.6m", "xpts": "2.7"}, {"name": "Ballard", "price": "£5.0m", "xpts": "4.1"}],
+            [{"name": "B.Fernandes", "price": "£12.0m", "xpts": "6.0"}, {"name": "Tzolis", "price": "£6.5m", "xpts": "3.4"}, {"name": "Mbeumo", "price": "£8.0m", "xpts": "5.0"}],
+            [{"name": "Haaland", "price": "£15.5m", "xpts": "8.6", "c": True}, {"name": "João Pedro", "price": "£7.6m", "xpts": "8.0"}, {"name": "Calvert-Lewin", "price": "£6.0m", "xpts": "4.3"}],
+            [{"name": "Kinsky", "price": "£4.5m"}, {"name": "Groß", "price": "£5.5m"}, {"name": "M.Sangaré", "price": "£5.6m"}, {"name": "Diop", "price": "£4.0m"}]
+        )
+    else:
+        # Default: Displays Your Own Active Team
+        render_squad_pitch(
+            "Active Team: Your Lineup Grid",
+            [{"name": "Verbruggen", "price": "£4.5m", "xpts": "2.9"}],
+            [{"name": "Tarkowski", "price": "£6.0m", "xpts": "3.6"}, {"name": "Diop", "price": "£4.0m", "xpts": "2.5"}, {"name": "Aina", "price": "£4.5m", "xpts": "2.4"}],
+            [{"name": "B.Fernandes", "price": "£12.0m", "xpts": "6.0", "c": True}, {"name": "Saka", "price": "£9.5m", "xpts": "3.9"}, {"name": "Szoboszlai", "price": "£7.0m", "xpts": "4.0"}, {"name": "Schade", "price": "£6.0m", "xpts": "3.9"}],
+            [{"name": "Calvert-Lewin", "price": "£6.0m", "xpts": "4.3"}, {"name": "Haaland", "price": "£15.5m", "xpts": "8.6"}, {"name": "João Pedro", "price": "£7.6m", "xpts": "8.0"}],
+            [{"name": "Kinsky", "price": "£4.5m"}, {"name": "Thomas", "price": "£4.0m"}, {"name": "Slater", "price": "£4.5m"}, {"name": "Hume", "price": "£4.5m"}]
         )
 
 with tab2:

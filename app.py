@@ -140,12 +140,30 @@ with tab1:
     if not gkp:
         manager_score = "57"
         gkp = [{"name": "Verbruggen", "price": "£4.5m", "xpts": "2.9"}]
-        dfs = [{"name": "Tarkowski", "price": "£6.0m", "xpts": "3.6"}, {"name": "Diop", "price": "£4.0m", "xpts": "2.5"}, {"name": "Aina", "price": "£4.5m", "xpts": "2.4"}]
-        mids = [{"name": "B.Fernandes", "price": "£12.0m", "xpts": "6.0", "c": True}, {"name": "Saka", "price": "£9.5m", "xpts": "3.9"}, {"name": "Szoboszlai", "price": "£7.0m", "xpts": "4.0"}, {"name": "Schade", "price": "£6.0m", "xpts": "3.9"}]
-        fwds = [{"name": "Calvert-Lewin", "price": "£6.0m", "xpts": "4.3"}, {"name": "Haaland", "price": "£15.5m", "xpts": "8.6"}, {"name": "João Pedro", "price": "£7.6m", "xpts": "8.0"}],
-        bench_players = [{"name": "Kinsky", "price": "£4.5m"}, {"name": "Thomas", "price": "£4.0m"}, {"name": "Slater", "price": "£4.5m"}, {"name": "Hume", "price": "£4.5m"}]
+        dfs = [
+            {"name": "Tarkowski", "price": "£6.0m", "xpts": "3.6"},
+            {"name": "Diop", "price": "£4.0m", "xpts": "2.5"},
+            {"name": "Aina", "price": "£4.5m", "xpts": "2.4"}
+        ]
+        mids = [
+            {"name": "B.Fernandes", "price": "£12.0m", "xpts": "6.0", "c": True},
+            {"name": "Saka", "price": "£9.5m", "xpts": "3.9"},
+            {"name": "Szoboszlai", "price": "£7.0m", "xpts": "4.0"},
+            {"name": "Schade", "price": "£6.0m", "xpts": "3.9"}
+        ]
+        fwds = [
+            {"name": "Calvert-Lewin", "price": "£6.0m", "xpts": "4.3"},
+            {"name": "Haaland", "price": "£15.5m", "xpts": "8.6"},
+            {"name": "João Pedro", "price": "£7.6m", "xpts": "8.0"}
+        ]
+        bench_players = [
+            {"name": "Kinsky", "price": "£4.5m"},
+            {"name": "Thomas", "price": "£4.0m"},
+            {"name": "Slater", "price": "£4.5m"},
+            {"name": "Hume", "price": "£4.5m"}
+        ]
 
-    # Display the final dynamic pitch cards matching FPL Analyzer styling layout
+    # --- DISPLAY COMPREHENSIVE DYNAMIC PITCH CARD SHEET ---
     st.markdown(f"<h3 style='text-align: center;'>🏟️ {selected_rival} (Total Points: {manager_score})</h3>", unsafe_allow_html=True)
     if active_chip != "None":
         st.markdown(f"<p style='text-align: center; color: #4caf50; font-weight: bold;'>⚡ Active Chip Played: {active_chip}</p>", unsafe_allow_html=True)
@@ -166,7 +184,3 @@ with tab1:
 
 # TAB 2: Full Leaderboard Table Matrix Spreadsheets
 with tab2:
-    st.subheader(f"🏆 Active League Leaderboard: {league_name}")
-    if not full_standings_df.empty:
-        st.dataframe(full_standings_df, use_container_width=True, hide_index=True)
-    else:

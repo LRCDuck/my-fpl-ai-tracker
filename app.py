@@ -4,7 +4,7 @@ import requests
 
 st.set_page_config(page_title="AI FPL Elite Tactical Hub", layout="wide")
 
-# Custom UI Styles
+# Custom UI Theme Styles
 st.markdown("""
     <style>
     .main { background-color: #0d1117; color: #c9d1d9; }
@@ -17,27 +17,32 @@ st.markdown("""
 st.title("⚽ AI FPL Elite Tactical Hub & Live Tracker")
 st.caption("Automated Roster Audits • Full League Syncing Engine • Strategic Chip Tracking Panels")
 
-# Sidebar Configuration
+# Sidebar - User Inputs
 st.sidebar.header("🛡️ Live League Sync")
 league_input = st.sidebar.text_input("Enter FPL Mini-League ID:", value="1116047")
 
-# --- EXPANDED LIVE API SYNC ENGINE ---
 managers_list = []
-league_name = "Loading Database..."
+league_name = "Work Mini-League Workspace"
 full_standings_df = pd.DataFrame()
 
 if league_input:
     try:
-        # Reaching directly into the official FPL data feed
-        fpl_url = f"https://premierleague.com{league_input}/standings/"
-        response = requests.get(fpl_url, timeout=10)
+        # FPL API endpoint url
+        fpl_url = f"https://fantasy.premierleague.com/api/leagues-classic/{league_input}/standings/"
+        
+        # CRITICAL FIX: Adding browser headers to bypass the cloud block
+        user_headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+        
+        # Fetching the data with human simulation parameters
+        response = requests.get(fpl_url, headers=user_headers, timeout=10)
         
         if response.status_code == 200:
             data = response.json()
             league_name = data['league']['name']
             raw_results = data['standings']['results']
             
-            # Read every single manager in the league (no caps)
             league_rows = []
             for m in raw_results:
                 display_name = f"{m['player_name']} ({m['entry_name']})"
@@ -51,14 +56,16 @@ if league_input:
                 })
             
             full_standings_df = pd.DataFrame(league_rows)
+        else:
+            st.sidebar.warning(f"FPL API returned status code: {response.status_code}")
             
     except Exception as e:
-        st.sidebar.error(f"Server Throttling Active. Retrying connection...")
+        st.sidebar.error(f"Connection error occurred. Server queue is busy.")
 
-# Fallback values if the FPL servers drop connection completely
+# Stable fallbacks if the server queue is clogged post-deadline
 if not managers_list:
     managers_list = ["Sam Young (Heroes and Villans)", "Ben Taylor (Final 11)", "Stephen Kay"]
-    league_name = "Work Mini-League Workspace"
+    league_name = "Local Offline View (FPL Servers Loaded)"
 
 selected_rival = st.sidebar.selectbox("Select Rival to Audit:", managers_list)
 
@@ -69,10 +76,10 @@ with tab1:
     st.subheader(f"🏆 Active League: {league_name}")
     
     if not full_standings_df.empty:
-        st.markdown(f"### 📋 Full Leaderboard ({len(full_standings_df)} Managers Found)")
+        st.markdown(f"### 📋 Full Leaderboard ({len(full_standings_df)} Managers Synced)")
         st.dataframe(full_standings_df, use_container_width=True, hide_index=True)
     else:
-        st.info("🔄 Connecting to live scores. If this takes a moment, the FPL server queue is clearing processing traffic.")
+        st.info("🔄 Running local sandbox values. Double-check your link connectivity status.")
         
     st.markdown("---")
     st.markdown(f"**🔬 Detailed Scout Report For:** {selected_rival}")

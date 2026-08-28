@@ -4,17 +4,18 @@ import requests
 
 st.set_page_config(page_title="AI FPL Mini-League Tracker", layout="wide")
 
-# Custom Dark Mode styling to look like a premium premium analytics tool
+# Custom Dark Mode styling to look like a premium analytics tool
 st.markdown("""
     <style>
     .main { background-color: #0d1117; color: #c9d1d9; }
     .card { background-color: #161b22; padding: 20px; border-radius: 10px; border: 1px solid #30363d; margin-bottom: 20px; }
     .title-header { text-align: center; color: #ffffff; font-weight: bold; margin-bottom: 10px; }
+    .stButton>button { background-color: #238636; color: white; font-weight: bold; border-radius: 8px; width: 100%; }
     </style>
 """, unsafe_allow_html=True)
 
 st.markdown("<h1 class='title-header'>⚽ AI FPL Mini-League Scouting Hub</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #8b949e;'>Real-Time Standings Engine • Zero-Hardcoding • Direct Database Feed</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #8b949e;'>Smart-Caching Mode • Manual Refresh Button • Direct Database Feed</p>", unsafe_allow_html=True)
 st.markdown("---")
 
 # --- SIDEBAR CONFIGURATION ---
@@ -27,13 +28,11 @@ user_headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
 }
 
-league_name = "Awaiting Sync..."
-full_standings_df = pd.DataFrame()
-
-# --- AUTOMATED DATABASE FETCH (ZERO HARDCODING) ---
-if league_id:
+# --- SMART CACHING STORAGE ENGINE ---
+@st.cache_data(ttl=86400)
+def fetch_league_standings_cached(l_id):
     try:
-        fpl_url = f"https://premierleague.com{league_id}/standings/"
+        fpl_url = f"https://premierleague.com{l_id}/standings/"
         session = requests.Session()
         response = session.get(fpl_url, headers=user_headers, timeout=15)
         
@@ -44,12 +43,9 @@ if league_id:
             
             league_rows = []
             for m in raw_results:
-                # Track if they went up, down, or stayed equal in rank
                 movement = "➖"
-                if m['rank_sort'] < m['last_rank']:
-                    movement = "🔺"
-                elif m['rank_sort'] > m['last_rank']:
-                    movement = "🔻"
+                if m['rank_sort'] < m['last_rank']: movement = "🔺"
+                elif m['rank_sort'] > m['last_rank']: movement = "🔻"
                 
                 league_rows.append({
                     "Rank": m['rank'],
@@ -59,24 +55,35 @@ if league_id:
                     "GW Score": m['event_total'],
                     "Total Points": m['total']
                 })
-            full_standings_df = pd.DataFrame(league_rows)
+            return league_name, pd.DataFrame(league_rows), None
         else:
-            st.error(f"⚠️ FPL Database busy processing match-week files (Server Status: {response.status_code}).")
+            return "Server Offline", pd.DataFrame(), f"Database busy (Code: {response.status_code})"
     except Exception as e:
-        st.error(f"⚠️ Connection error. FPL traffic is heavy. Retrying backend session loop...")
+        return "Server Error", pd.DataFrame(), "FPL connection timed out."
+
+# --- MANUAL REFRESH BUTTON TRIGGER ---
+# This puts a big clean button right above your leaderboard on the page!
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    if st.button("🔄 Manually Pull Fresh Data (Clear Memory Cache)"):
+        st.cache_data.clear()
+        st.toast("🧹 Local cache cleared! Fetching fresh live scores...")
+
+league_name, full_standings_df, error_msg = fetch_league_standings_cached(league_id)
 
 # --- MAIN INTERFACE DISPLAY ---
+if error_msg:
+    st.error(f"⚠️ {error_msg}")
+
 st.markdown(f"<div class='card'><h3>🏆 Active League: {league_name}</h3>"
-            f"<p>Showing all managers currently synced directly from the official game database.</p></div>", unsafe_allow_html=True)
+            f"<p>🔒 Loading from secure internal website memory. Click the button above to update live.</p></div>", unsafe_allow_html=True)
 
 if not full_standings_df.empty:
-    # Function to highlight your row so you can instantly see where you sit
     def highlight_user_row(row):
         if your_name and your_name.lower() in row['Manager Name'].lower():
             return ['background-color: #238636; color: white; font-weight: bold'] * len(row)
         return [''] * len(row)
     
-    # Render the spreadsheet with matching highlights
     styled_df = full_standings_df.style.apply(highlight_user_row, axis=1)
     st.dataframe(styled_df, use_container_width=True, hide_index=True)
     
@@ -85,8 +92,8 @@ if not full_standings_df.empty:
     st.subheader("🤖 AI Scouting Summary")
     leader_name = full_standings_df.iloc[0]['Manager Name']
     leader_points = full_standings_df.iloc[0]['Total Points']
-    st.info(f"📊 **Scouting Report:** The mini-league is currently being led by **{leader_name}** with a score of **{leader_points} points**. "
-            f"As Gameweek 2 matches play this weekend, your rolled free transfer gives you a massive flexibility advantage over the field. "
-            f"Keep your eye on captain returns tomorrow morning to secure your rank rise!")
+    st.info(f"📊 **Scouting Report:** The mini-league is being led by **{leader_name}** with **{leader_points} points**. "
+            f"Your app is fully protected against server limits. The table will stay frozen instantly until you manually "
+            f"click the green 'Manually Pull Fresh Data' button above!")
 else:
-    st.warning("🔄 Awaiting data stream connection. Enter your valid Mini-League ID in the sidebar to load your rivals.")
+    st.warning("🔄 Awaiting initial data stream link setup. Make sure your Mini-League ID is entered correctly.")

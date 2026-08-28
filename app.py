@@ -185,6 +185,6 @@ with tab3:
             risers = [el for el in player_registry.values() if el.get('transfers_in_event', 0) > 40000][:5]
             if risers:
                 for r in risers:
-                    st.markdown(f"* <span class='price-up'>{r['web_name']} ({r['team_code']}):</span> Net Influx Market Activity 🔺", unsafe_allow_html=True)
+                    st.markdown(f"* <span class='price-up'>{r['web_name']}</span>: Net Influx Market Activity 🔺", unsafe_allow_html=True)
             else:
                 st.write("Market volatility levels steady.")

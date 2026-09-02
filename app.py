@@ -3,55 +3,62 @@ import pandas as pd
 import requests
 
 st.set_page_config(
-    page_title="AI FPL Mini-League Tracker",
+    page_title="AI FPL Mini-League Scouting Hub",
     layout="wide"
 )
 
 # --------------------------------------------------
-# CUSTOM STYLING
+# STYLING
 # --------------------------------------------------
+
 st.markdown("""
 <style>
 .main {
     background-color: #0d1117;
-    color: #c9d1d9;
 }
 
 .card {
     background-color: #161b22;
     padding: 20px;
-    border-radius: 10px;
+    border-radius: 12px;
     border: 1px solid #30363d;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
 .title-header {
     text-align: center;
-    color: #ffffff;
+    color: white;
     font-weight: bold;
-    margin-bottom: 10px;
 }
 
 .stButton > button {
     background-color: #238636;
     color: white;
-    font-weight: bold;
     border-radius: 8px;
+    font-weight: bold;
     width: 100%;
+}
+
+div[data-testid="metric-container"] {
+    background-color: #161b22;
+    border: 1px solid #30363d;
+    padding: 15px;
+    border-radius: 12px;
 }
 </style>
 """, unsafe_allow_html=True)
 
 # --------------------------------------------------
-# PAGE HEADER
+# HEADER
 # --------------------------------------------------
+
 st.markdown(
     "<h1 class='title-header'>⚽ AI FPL Mini-League Scouting Hub</h1>",
     unsafe_allow_html=True
 )
 
 st.markdown(
-    "<p style='text-align:center;color:#8b949e;'>Elite League Tracking • Smart Caching • Live FPL Data</p>",
+    "<p style='text-align:center;color:#8b949e;'>League Analytics • Live Standings • AI Scouting Insights</p>",
     unsafe_allow_html=True
 )
 
@@ -60,145 +67,189 @@ st.markdown("---")
 # --------------------------------------------------
 # SIDEBAR
 # --------------------------------------------------
-st.sidebar.header("⚙️ League Settings")
+
+st.sidebar.header("⚙️ Settings")
 
 league_id = st.sidebar.text_input(
-    "Enter FPL Mini-League ID:",
+    "Mini-League ID",
     value="1116047"
 )
 
 your_name = st.sidebar.text_input(
-    "Enter Your Name (Optional Highlight):",
+    "Your Name",
     value=""
 )
 
 # --------------------------------------------------
-# HEADERS
+# FETCH DATA
 # --------------------------------------------------
-user_headers = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/124.0.0.0 Safari/537.36"
-    ),
-    "Accept": "application/json",
-    "Referer": "https://fantasy.premierleague.com/",
-    "Origin": "https://fantasy.premierleague.com"
-}
 
-# --------------------------------------------------
-# DATA FETCH
-# --------------------------------------------------
 @st.cache_data(ttl=3600)
-def fetch_league_standings_direct(l_id):
-
-    if not l_id:
-        return "No League Selected", pd.DataFrame(), "Please enter a Mini-League ID."
+def fetch_league_data(l_id):
 
     try:
-        fpl_url = (
-            f"https://fantasy.premierleague.com/api/"
-            f"leagues-classic/{l_id}/standings/"
-        )
+
+        url = f"https://fantasy.premierleague.com/api/leagues-classic/{l_id}/standings/"
 
         response = requests.get(
-            fpl_url,
-            headers=user_headers,
+            url,
+            headers={"User-Agent": "Mozilla/5.0"},
             timeout=15
         )
 
-        if response.status_code == 200:
+        response.raise_for_status()
 
-            data = response.json()
+        data = response.json()
 
-            league_name = data["league"]["name"]
-            raw_results = data["standings"]["results"]
+        league_name = data["league"]["name"]
 
-            league_rows = []
+        standings = []
 
-            for manager in raw_results:
+        for manager in data["standings"]["results"]:
 
-                movement = "➖"
+            movement = "➖"
 
-                if manager["rank_sort"] < manager["last_rank"]:
-                    movement = "🔺"
-                elif manager["rank_sort"] > manager["last_rank"]:
-                    movement = "🔻"
+            if manager["rank_sort"] < manager["last_rank"]:
+                movement = "🔺"
+            elif manager["rank_sort"] > manager["last_rank"]:
+                movement = "🔻"
 
-                league_rows.append({
-                    "Rank": manager["rank"],
-                    "Trend": movement,
-                    "Manager Name": manager["player_name"],
-                    "Team Name": manager["entry_name"],
-                    "GW Score": manager["event_total"],
-                    "Total Points": manager["total"]
-                })
+            standings.append({
+                "Rank": manager["rank"],
+                "Trend": movement,
+                "Manager Name": manager["player_name"],
+                "Team Name": manager["entry_name"],
+                "GW Score": manager["event_total"],
+                "Total Points": manager["total"]
+            })
 
-            return league_name, pd.DataFrame(league_rows), None
-
-        return (
-            "Server Error",
-            pd.DataFrame(),
-            f"FPL returned status code {response.status_code}."
-        )
+        return league_name, pd.DataFrame(standings), None
 
     except Exception as e:
-
-        return (
-            "Connection Failed",
-            pd.DataFrame(),
-            str(e)
-        )
+        return "Unknown League", pd.DataFrame(), str(e)
 
 # --------------------------------------------------
 # REFRESH BUTTON
 # --------------------------------------------------
+
 col1, col2, col3 = st.columns([1, 2, 1])
 
 with col2:
-    if st.button("🔄 Refresh Live Scores"):
+    if st.button("🔄 Refresh Scores"):
         st.cache_data.clear()
-        st.toast("Cache cleared. Pulling fresh data...")
+        st.rerun()
 
 # --------------------------------------------------
 # LOAD DATA
 # --------------------------------------------------
-league_name, standings_df, error_msg = fetch_league_standings_direct(
-    league_id
-)
 
-# --------------------------------------------------
-# ERROR MESSAGE
-# --------------------------------------------------
-if error_msg:
-    st.warning(error_msg)
+league_name, standings_df, error = fetch_league_data(league_id)
+
+if error:
+    st.error(error)
 
 # --------------------------------------------------
 # LEAGUE CARD
 # --------------------------------------------------
+
 st.markdown(
     f"""
     <div class="card">
-        <h3>🏆 Active League: {league_name}</h3>
-        <p>
-            Live standings sourced directly from the Fantasy Premier League API.
-        </p>
+        <h3>🏆 {league_name}</h3>
+        <p>Live data powered by the Fantasy Premier League API.</p>
     </div>
     """,
     unsafe_allow_html=True
 )
 
 # --------------------------------------------------
-# TABLE DISPLAY
+# MAIN CONTENT
 # --------------------------------------------------
+
 if not standings_df.empty:
+
+    # --------------------------------------------------
+    # PODIUM
+    # --------------------------------------------------
+
+    st.subheader("🏆 League Leaders")
+
+    podium = standings_df.head(3)
+
+    c1, c2, c3 = st.columns(3)
+
+    with c1:
+        st.metric(
+            "🥇 First",
+            podium.iloc[0]["Manager Name"],
+            f"{podium.iloc[0]['Total Points']} pts"
+        )
+
+    with c2:
+        if len(podium) > 1:
+            st.metric(
+                "🥈 Second",
+                podium.iloc[1]["Manager Name"],
+                f"{podium.iloc[1]['Total Points']} pts"
+            )
+
+    with c3:
+        if len(podium) > 2:
+            st.metric(
+                "🥉 Third",
+                podium.iloc[2]["Manager Name"],
+                f"{podium.iloc[2]['Total Points']} pts"
+            )
+
+    # --------------------------------------------------
+    # USER STATS
+    # --------------------------------------------------
+
+    if your_name:
+
+        my_team = standings_df[
+            standings_df["Manager Name"].str.contains(
+                your_name,
+                case=False,
+                na=False
+            )
+        ]
+
+        if not my_team.empty:
+
+            leader_points = standings_df.iloc[0]["Total Points"]
+
+            your_points = my_team.iloc[0]["Total Points"]
+
+            gap = leader_points - your_points
+
+            rank = my_team.iloc[0]["Rank"]
+
+            c1, c2 = st.columns(2)
+
+            with c1:
+                st.metric(
+                    "📍 Your Position",
+                    rank
+                )
+
+            with c2:
+                st.metric(
+                    "🎯 Gap To 1st",
+                    f"{gap} pts"
+                )
+
+    st.markdown("---")
+
+    # --------------------------------------------------
+    # TABLE HIGHLIGHTING
+    # --------------------------------------------------
 
     def highlight_user_row(row):
 
         if (
             your_name
-            and your_name.lower()
-            in row["Manager Name"].lower()
+            and your_name.lower() in row["Manager Name"].lower()
         ):
             return [
                 "background-color:#238636;color:white;font-weight:bold;"
@@ -211,6 +262,8 @@ if not standings_df.empty:
         axis=1
     )
 
+    st.subheader("📋 Full Standings")
+
     st.dataframe(
         styled_df,
         use_container_width=True,
@@ -218,27 +271,113 @@ if not standings_df.empty:
     )
 
     # --------------------------------------------------
-    # AI SUMMARY
+    # CHART
     # --------------------------------------------------
-    st.markdown("---")
-    st.subheader("🤖 AI Scouting Summary")
 
-    leader_name = standings_df.iloc[0]["Manager Name"]
-    leader_points = standings_df.iloc[0]["Total Points"]
+    st.markdown("---")
+
+    st.subheader("📈 League Points Chart")
+
+    chart_df = standings_df.set_index(
+        "Manager Name"
+    )["Total Points"]
+
+    st.bar_chart(chart_df)
+
+    # --------------------------------------------------
+    # TOP GW SCORES
+    # --------------------------------------------------
+
+    st.markdown("---")
+
+    st.subheader("🔥 Highest Gameweek Scores")
+
+    top_gw = standings_df.sort_values(
+        "GW Score",
+        ascending=False
+    ).head(5)
+
+    st.dataframe(
+        top_gw,
+        hide_index=True,
+        use_container_width=True
+    )
+
+    # --------------------------------------------------
+    # RISERS & FALLERS
+    # --------------------------------------------------
+
+    st.markdown("---")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.subheader("🚀 Risers")
+
+        risers = standings_df[
+            standings_df["Trend"] == "🔺"
+        ]
+
+        if risers.empty:
+            st.info("No risers this week.")
+        else:
+            st.dataframe(
+                risers,
+                hide_index=True,
+                use_container_width=True
+            )
+
+    with col2:
+
+        st.subheader("📉 Fallers")
+
+        fallers = standings_df[
+            standings_df["Trend"] == "🔻"
+        ]
+
+        if fallers.empty:
+            st.info("No fallers this week.")
+        else:
+            st.dataframe(
+                fallers,
+                hide_index=True,
+                use_container_width=True
+            )
+
+    # --------------------------------------------------
+    # AI INSIGHTS
+    # --------------------------------------------------
+
+    st.markdown("---")
+
+    st.subheader("🤖 AI Scouting Report")
+
+    leader = standings_df.iloc[0]
+
+    bottom = standings_df.iloc[-1]
+
+    gap = (
+        leader["Total Points"]
+        - bottom["Total Points"]
+    )
 
     st.info(
         f"""
-        📊 **Current League Leader:** **{leader_name}**
-        
-        🏆 Total Points: **{leader_points}**
-        
-        The live league table is updating from the official
-        Fantasy Premier League API and your tracking dashboard
-        is fully operational.
-        """
+🏆 **League Leader:** {leader['Manager Name']} ({leader['Total Points']} pts)
+
+🔥 **Best Current GW Score:** {standings_df['GW Score'].max()} pts
+
+📈 **League Spread:** {gap} pts from first to last place
+
+⚠️ **Bottom Manager:** {bottom['Manager Name']}
+
+📊 The league remains competitive, with movement still possible as additional gameweek points arrive.
+"""
     )
 
 else:
+
     st.warning(
-        "No standings available. Check your Mini-League ID and try again."
+        "No standings available. Check your league ID and try again."
     )
